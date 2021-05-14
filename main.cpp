@@ -349,7 +349,7 @@ public:
 
 /*
  * пример curl запроса, на место # написать номер команды
- * curl -X POST -H "Content-Type:application/json" -d \"test\" http://localhost
+ * curl -X POST -H "Content-Type:application/json" -d \"#\" http://localhost
  * команды не копировать, вводить в консоль самостоятельно
  */
 
