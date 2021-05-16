@@ -222,7 +222,7 @@ class CS
 	PID* pid;
 	Pooh* pooh;
 	World* world;
-	double height = 0, mass, vel = 0, acc = 0;
+	double height = 0, mass = 0, vel = 0, acc = 0;
 
 	double dh = 0;
 	double dv = 0;
@@ -258,7 +258,6 @@ public:
 	void Calculate()
 	{
 		mass = pooh->GetPoohMass();
-
 		acc = engine->GetThrust() / mass;
 		vel += acc * dt;
 		height += vel * dt;
@@ -267,26 +266,27 @@ public:
 
 		simTime += dt;
 		//test console logging
-		std::system("cls");
-		std::cout << "condition " << cmd << endl;
-		std::cout << "height = " << height << std::endl;
-		std::cout << "vel = " << vel << std::endl;
-		std::cout << "acc = " << acc << std::endl;
-		std::cout << "force% = " << engine->GetThrust() << std::endl;
+		system("cls");
+		cout << endl << " LOGGING " << endl;
+		cout << endl << " STATUS " << cmd << endl;
+		cout << " Height = " << height << endl;
+		cout << " Velocity = " << vel << endl;
+		cout << " Acceleration = " << acc << endl;
+		cout << " Power percentage = " << engine->GetThrust() << endl;
 		//test console logging
 	}
 
-	double GetHeight()
+	float GetHeight()
 	{
-		return vel * dt;
+		return height;
 	}
 
-	double GetVelocity()
+	float GetVelocity()
 	{
 		return vel;
 	}
 
-	double GetAcc()
+	float GetAcc()
 	{
 		return acc;
 	}
@@ -294,9 +294,8 @@ public:
 
 class Drawing
 {
-
 	std::vector<RectangleShape> figures;
-	std::vector<Text> text;
+	std::vector<Text*> text;
 	RectangleShape pooh;
 
 public:
@@ -319,7 +318,7 @@ public:
 		}
 	}
 
-	void AddTextToDraw(const std::vector<Text>& t)
+	void AddTextToDraw(const std::vector<Text*>& t)
 	{
 		for (int i = 0; i < t.size(); i++)
 		{
@@ -338,18 +337,141 @@ public:
 
 		for (int i = 0; i < text.size(); i++)
 		{
-			window.draw(text[i]);
+			window.draw(*(text[i]));
 		}
 
 		text.clear();
 	}
 };
 
+class Messages
+{
+	CS* cs;
+
+	Vector2f textBlockPos;
+
+	RectangleShape background;
+	Color backgroundColor;
+	Vector2f backgroundSize;
+
+	Font font;
+	int fontSize;
+	Color fontColor;
+
+	vector<Text*> text;
+
+	Text heightText;
+	Text velocityText;
+	Text accelerationText;
+	Text statusText;
+
+public:
+
+	Messages(CS* CS)
+	{
+		cs = CS;
+	}
+
+	void SetFontSize(int size)
+	{
+		fontSize = size;
+	}
+
+	void SetFontColor(Color color)
+	{
+		fontColor = color;
+	}
+
+	void SetTextBlockPosition(Vector2f pos)
+	{
+		textBlockPos = pos;
+	}
+
+	void SetFont(string fontPath)
+	{
+		font.loadFromFile(fontPath);
+	}
+
+	void CreateTextVector()
+	{
+		text.clear();
+		text.push_back(new Text("H: ", font, fontSize));
+		text.push_back(new Text("V: ", font, fontSize));
+		text.push_back(new Text("A: ", font, fontSize));
+		text.push_back(new Text("Status: ", font, fontSize));
+	}
+
+	void CustomizeText()
+	{
+		for (int i = 0; i < text.size(); i++)
+		{
+			text[i]->setFillColor(fontColor);
+			text[i]->setPosition(textBlockPos.x + 10, textBlockPos.y + i * (float)fontSize + 6);
+		}
+	}
+
+	void UpdateTextValues()
+	{
+		text[0]->setString("H: " + to_string(cs->GetHeight()));
+		text[1]->setString("V: " + to_string(cs->GetVelocity()));
+		text[2]->setString("A: " + to_string(cs->GetAcc()));
+		string status;
+		switch (cmd)
+		{
+		case FLIGHT:
+			status = "FLIGHT";
+			break;
+		case LANDING:
+			status = "LANDING";
+			break;
+		case WAITING:
+			status = "WAITING";
+			break;
+		default:
+			status = "NO STATUS";
+			break;
+		}
+		text[3]->setString("Status: " + status);
+	}
+
+	void SetBackgroundSize(Vector2f size)
+	{
+		backgroundSize = size;
+	}
+
+	void SetBackgroundColor(Color color)
+	{
+		backgroundColor = color;
+	}
+
+	void CustomizeBackground()
+	{
+		background.setSize(backgroundSize);
+		background.setPosition(textBlockPos);
+		background.setFillColor(backgroundColor);
+		background.setOutlineThickness(3);
+		background.setOutlineColor(Color::Black);
+	}
+
+	RectangleShape BackgroundToDraw()
+	{
+		return background;
+	}
+
+	vector<Text*> TextToDraw()
+	{
+		return text;
+	}
+};
 
 /*
  * пример curl запроса, на место # написать номер команды
+ * 
+ * FLIGHT 1
+ * LANDING 2
+ * WAITING 3
+ * 
  * curl -X POST -H "Content-Type:application/json" -d \"#\" http://localhost
- * команды не копировать, вводить в консоль самостоятельно
  */
 
 void POST(http_request request)
@@ -369,10 +491,12 @@ void POST(http_request request)
 	{
 		cout << "ERROR: " << e.what() << endl;
 	}
-	request.reply(status_codes::OK);
+	string answer;
+	answer = " Status set: " + to_string(((int)cmd));
+	request.reply(status_codes::OK, json::value(conversions::to_string_t(answer)));
 }
 
-void RESTServer(http_listener& listener)
+void Server(http_listener& listener)
 {
 	listener.open().then([&listener]() {
 		cout << "\nWAITING FOR REQUEST\n" << endl;
@@ -396,13 +520,28 @@ int main()
 
 	Engine e(-500, 500);
 
-	PID pid(0.05, 0.0002, 0.0012, 0.016);
+	PID pid(0.5, 0.02, 0.12, 0.02);
 
 	CS cs(&e, &pid, &pooh, &world, 0.016);
 
+	Messages messages(&cs);
+	messages.SetFont("C:\\Windows\\Fonts\\consola.ttf");
+	messages.SetFontColor(Color::Black);
+	messages.SetFontSize(20);
+	messages.SetTextBlockPosition(Vector2f(50, 50));
+
+	messages.SetBackgroundSize(Vector2f(180, 100));
+	messages.SetBackgroundColor(Color::White);
+
+	messages.CreateTextVector();
+	messages.CustomizeText();
+	messages.CustomizeBackground();
+
+	//testing FLIGHT проверить значения переменных по умолчанию
+	//и почему с FLIGHT пропадали указатели
 	cmd = Commands::WAITING;
 
-	std::thread RESTThread(RESTServer, std::ref(listener));
+	std::thread serverThread(Server, std::ref(listener));
 
 	drawing.AddToDraw(world.ToDraw());
 
@@ -413,11 +552,7 @@ int main()
 		Event event;
 		while (window.pollEvent(event))
 		{
-			if (event.type == Event::Closed)
-			{
-				RESTThread.detach();
-				window.close();
-			}
+			if (event.type == Event::Closed) window.close();
 		}
 
 		switch (cmd)
@@ -453,12 +588,16 @@ int main()
 		}
 
 		window.clear(Color(120, 219, 226, 255));
+		messages.UpdateTextValues();
 		drawing.AddPoohToDraw(pooh.ToDraw());
+		drawing.AddToDraw(messages.BackgroundToDraw());
+		drawing.AddTextToDraw(messages.TextToDraw());
 		drawing.DrawAll(window);
 
 		window.display();
 		std::this_thread::sleep_for(std::chrono::milliseconds(20));
 	}
+	serverThread.detach();
 
 	return 0;
 }
