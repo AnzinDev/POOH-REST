@@ -268,11 +268,11 @@ public:
 		simTime += dt;
 		//test console logging
 		std::system("cls");
-		std::cout << "condition" << cmd << endl;
+		std::cout << "condition " << cmd << endl;
 		std::cout << "height = " << height << std::endl;
 		std::cout << "vel = " << vel << std::endl;
 		std::cout << "acc = " << acc << std::endl;
-		std::cout << "Force% = " << engine->GetThrust() << std::endl;
+		std::cout << "force% = " << engine->GetThrust() << std::endl;
 		//test console logging
 	}
 
@@ -343,7 +343,6 @@ public:
 
 		text.clear();
 	}
-
 };
 
 
@@ -360,11 +359,11 @@ void POST(http_request request)
 	{
 		auto extracted = request.extract_json();
 		auto jvalue = extracted.get();
-
-
-		auto str = jvalue.as_string();
-		cmd = static_cast<Commands>(atoi(conversions::to_utf8string(str).c_str()));
-		cout << "\n" << conversions::to_utf8string(str) << "\n" << endl;
+		if (!jvalue.is_null())
+		{
+			auto str = jvalue.as_string();
+			cmd = static_cast<Commands>(atoi(conversions::to_utf8string(str).c_str()));
+		}
 	}
 	catch (const http_exception& e)
 	{
@@ -414,7 +413,11 @@ int main()
 		Event event;
 		while (window.pollEvent(event))
 		{
-			if (event.type == Event::Closed) window.close();
+			if (event.type == Event::Closed)
+			{
+				RESTThread.detach();
+				window.close();
+			}
 		}
 
 		switch (cmd)
@@ -456,7 +459,6 @@ int main()
 		window.display();
 		std::this_thread::sleep_for(std::chrono::milliseconds(20));
 	}
-	RESTThread.detach();
 
 	return 0;
 }
