@@ -150,7 +150,7 @@ public:
 
 	void SetThrust(double percent)
 	{
-		thrust = percent * (maxThrust / 100.);
+		thrust = percent;
 	}
 
 	double GetThrust()
@@ -272,7 +272,7 @@ public:
 		cout << " Height = " << height << endl;
 		cout << " Velocity = " << vel << endl;
 		cout << " Acceleration = " << acc << endl;
-		cout << " Power percentage = " << engine->GetThrust() << endl;
+		cout << " Power = " << engine->GetThrust() << endl;
 		//test console logging
 	}
 
@@ -492,8 +492,51 @@ void POST(http_request request)
 		cout << "ERROR: " << e.what() << endl;
 	}
 	string answer;
-	answer = " Status set: " + to_string(((int)cmd));
-	request.reply(status_codes::OK, json::value(conversions::to_string_t(answer)));
+
+	request.reply(status_codes::OK, json::value(conversions::to_string_t(" Status set: " + to_string(((int)cmd)))));
+}
+
+void GET(http_request request)
+{
+	cout << "\nRecived GET request" << endl;
+	string status;
+	switch (cmd)
+	{
+	case FLIGHT:
+		status = "FLIGHT";
+		break;
+	case LANDING:
+		status = "LANDING";
+		break;
+	case WAITING:
+		status = "WAITING";
+		break;
+	default:
+		status = "NO STATUS";
+		break;
+	}
+
+	request.reply(status_codes::OK, json::value(conversions::to_string_t(" Current status: " + status)));
+}
+
+void PUT(http_request request)
+{
+	cout << "\nRecived PUT request" << endl;
+
+	auto extracted = request.extract_json();
+	auto jvalue = extracted.get();
+	auto str = jvalue.as_string();
+
+	cmd = static_cast<Commands>(atoi(conversions::to_utf8string(str).c_str()));
+	request.reply(status_codes::OK, json::value(conversions::to_string_t(" Updated"), false));
+}
+
+void DELETE(http_request request)
+{
+	cout << "\nRecived DELETE request" << endl;
+
+	cmd = Commands::WAITING;
+	request.reply(status_codes::OK, json::value(conversions::to_string_t(" Default status"), false));
 }
 
 void Server(http_listener& listener)
@@ -509,6 +552,9 @@ int main()
 	uri uri;
 	http_listener listener(uri.encode_uri(conversions::to_string_t("http://localhost/")));
 	listener.support(methods::POST, POST);
+	listener.support(methods::GET, GET);
+	listener.support(methods::PUT, PUT);
+	listener.support(methods::DEL, DELETE);
 
 	RenderWindow window(VideoMode(800, 800), "Pooh", Style::Close);
 
