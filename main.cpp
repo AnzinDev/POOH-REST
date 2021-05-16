@@ -520,7 +520,7 @@ int main()
 
 	Engine e(-500, 500);
 
-	PID pid(0.5, 0.02, 0.12, 0.02);
+	PID pid(0.2, 0.02, 0.12, 0.016);
 
 	CS cs(&e, &pid, &pooh, &world, 0.016);
 
@@ -537,8 +537,6 @@ int main()
 	messages.CustomizeText();
 	messages.CustomizeBackground();
 
-	//testing FLIGHT проверить значения переменных по умолчанию
-	//и почему с FLIGHT пропадали указатели
 	cmd = Commands::WAITING;
 
 	std::thread serverThread(Server, std::ref(listener));
@@ -552,7 +550,11 @@ int main()
 		Event event;
 		while (window.pollEvent(event))
 		{
-			if (event.type == Event::Closed) window.close();
+			if (event.type == Event::Closed) 
+			{
+				serverThread.detach();
+				window.close();
+			}
 		}
 
 		switch (cmd)
@@ -597,7 +599,6 @@ int main()
 		window.display();
 		std::this_thread::sleep_for(std::chrono::milliseconds(20));
 	}
-	serverThread.detach();
 
 	return 0;
 }
