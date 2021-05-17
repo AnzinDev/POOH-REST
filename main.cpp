@@ -124,7 +124,7 @@ public:
 	bool Bees()
 	{
 		srand(time(NULL));
-		
+
 		return (rand() % 100 < 33) ? 1 : 0;
 	}
 };
@@ -340,7 +340,7 @@ public:
 	}
 };
 
-class Messages
+class Interface
 {
 	CS* cs;
 
@@ -363,7 +363,7 @@ class Messages
 
 public:
 
-	Messages(CS* CS)
+	Interface(CS* CS)
 	{
 		cs = CS;
 	}
@@ -462,11 +462,11 @@ public:
 
 /*
  * пример curl запроса, на место # написать номер команды
- * 
+ *
  * FLIGHT 1
  * LANDING 2
  * WAITING 3
- * 
+ *
  * curl -X POST -H "Content-Type:application/json" -d \"#\" http://localhost
  */
 
@@ -566,18 +566,18 @@ int main()
 
 	CS cs(&e, &pid, &pooh, &world, 0.016);
 
-	Messages messages(&cs);
-	messages.SetFont("C:\\Windows\\Fonts\\consola.ttf");
-	messages.SetFontColor(Color::Black);
-	messages.SetFontSize(20);
-	messages.SetTextBlockPosition(Vector2f(50, 50));
+	Interface interface(&cs);
+	interface.SetFont("C:\\Windows\\Fonts\\consola.ttf");
+	interface.SetFontColor(Color::Black);
+	interface.SetFontSize(20);
+	interface.SetTextBlockPosition(Vector2f(50, 50));
 
-	messages.SetBackgroundSize(Vector2f(180, 100));
-	messages.SetBackgroundColor(Color::White);
+	interface.SetBackgroundSize(Vector2f(180, 100));
+	interface.SetBackgroundColor(Color::White);
 
-	messages.CreateTextVector();
-	messages.CustomizeText();
-	messages.CustomizeBackground();
+	interface.CreateTextVector();
+	interface.CustomizeText();
+	interface.CustomizeBackground();
 
 	cmd = Commands::WAITING;
 
@@ -592,7 +592,7 @@ int main()
 		Event event;
 		while (window.pollEvent(event))
 		{
-			if (event.type == Event::Closed) 
+			if (event.type == Event::Closed)
 			{
 				serverThread.detach();
 				window.close();
@@ -632,10 +632,10 @@ int main()
 		}
 
 		window.clear(Color(120, 219, 226, 255));
-		messages.UpdateTextValues();
+		interface.UpdateTextValues();
 		drawing.AddPoohToDraw(pooh.ToDraw());
-		drawing.AddToDraw(messages.BackgroundToDraw());
-		drawing.AddTextToDraw(messages.TextToDraw());
+		drawing.AddToDraw(interface.BackgroundToDraw());
+		drawing.AddTextToDraw(interface.TextToDraw());
 		drawing.DrawAll(window);
 
 		window.display();
