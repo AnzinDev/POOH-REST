@@ -18,7 +18,7 @@ using namespace std;
 using namespace utility;
 using namespace sf;
 
-enum Commands
+enum class Commands
 {
 	FLIGHT = 1,
 	LANDING,
@@ -52,11 +52,6 @@ public:
 		return pooh;
 	}
 
-	void Rot()
-	{
-		pooh.rotate(20);
-	}
-
 	double GetPoohMass()
 	{
 		return mass;
@@ -74,7 +69,7 @@ public:
 		{
 			mass += honeyMass;
 			honeyMass = 0;
-			return 0; //мёд кончился 
+			return 0;
 		}
 	}
 };
@@ -129,6 +124,7 @@ public:
 	bool Bees()
 	{
 		srand(time(NULL));
+		
 		return (rand() % 100 < 33) ? 1 : 0;
 	}
 };
@@ -268,7 +264,7 @@ public:
 		//test console logging
 		system("cls");
 		cout << endl << " LOGGING " << endl;
-		cout << endl << " STATUS " << cmd << endl;
+		cout << endl << " STATUS " << (int)cmd << endl;
 		cout << " Height = " << height << endl;
 		cout << " Velocity = " << vel << endl;
 		cout << " Acceleration = " << acc << endl;
@@ -418,13 +414,13 @@ public:
 		string status;
 		switch (cmd)
 		{
-		case FLIGHT:
+		case Commands::FLIGHT:
 			status = "FLIGHT";
 			break;
-		case LANDING:
+		case Commands::LANDING:
 			status = "LANDING";
 			break;
-		case WAITING:
+		case Commands::WAITING:
 			status = "WAITING";
 			break;
 		default:
@@ -502,13 +498,13 @@ void GET(http_request request)
 	string status;
 	switch (cmd)
 	{
-	case FLIGHT:
+	case Commands::FLIGHT:
 		status = "FLIGHT";
 		break;
-	case LANDING:
+	case Commands::LANDING:
 		status = "LANDING";
 		break;
-	case WAITING:
+	case Commands::WAITING:
 		status = "WAITING";
 		break;
 	default:
@@ -605,7 +601,7 @@ int main()
 
 		switch (cmd)
 		{
-		case FLIGHT:
+		case Commands::FLIGHT:
 		{
 			cs.SetValue(world.GetHoleHight());
 			cs.SetHoneyMass(world.GetHoneyMass());
@@ -615,7 +611,7 @@ int main()
 
 			break;
 		}
-		case LANDING:
+		case Commands::LANDING:
 		{
 			cs.SetValue(0);
 			cs.Calculate();
@@ -623,7 +619,7 @@ int main()
 
 			break;
 		}
-		case WAITING:
+		case Commands::WAITING:
 		{
 			std::system("cls");
 			std::cout << "POOH IS WAITING" << std::endl;
